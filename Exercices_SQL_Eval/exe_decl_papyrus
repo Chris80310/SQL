@@ -1,0 +1,76 @@
+
+-- Dans MySQL, un trigger (ou déclencheur) est une commande SQL définie par l'utilisateur 
+-- qui est automatiquement invoquée lors d'une opération INSERT , DELETE ou UPDATE .
+-- Le code trigger est associé à une table et est détruit une fois que la table est supprimée.
+
+/********* Création d'un déclencheur AFTER UPDATE *********/
+/*********************************************************/
+
+-- Créer une table ARTICLES_A_COMMANDER avec les colonnes :
+--CODART : Code de l'article, voir la table produit
+-- DATE : date du jour (par défaut)
+-- QTE : à calculer
+
+-- Créer un déclencheur UPDATE sur la table produit : lorsque le stock physique devient
+-- inférieur ou égal au stock d'alerte, une nouvelle ligne est insérée dans la table ARTICLES_A_COMMANDER.
+
+-- Attention, il faut prendre en compte les quantités déjà commandées dans la table ARTICLES_A_COMMANDER .
+
+-- Pour comprendre le problème :
+--Soit l'article I120, le stock d'alerte = 5, le stock physique = 20
+-- Nous retirons 15 produits du stock. stock d'alerte = 5, le stock physique = 5, le stock physique n'est pas inférieur au stock d'alerte, on ne fait rien.
+-- Nous retirons 1 produit du stock. stock d'alerte = 5, le stock physique = 4, le stock physique est inférieur au stock d'alerte, nous devons recommander des produits. Nous insérons une ligne dans la table ARTICLES_A_COMMANDER avec QTE = (stock alerte - stock physique) = 1
+-- Nous retirons 2 produit du stock. stock d'alerte = 5, le stock physique = 2. le stock physique est inférieur au stock d'alerte, nous devons recommander des produits. Nous insérons une ligne dans la table ARTICLES_A_COMMANDER avec QTE = (stock alerte - stock physique) – quantité déjà commandée dans ARTICLES_A_COMMANDER : QTE = (5 - 2) – 1 = 2
+
+
+-- CREATE TABLE articles_a_commander
+-- (
+-- codart INT,
+-- date DATE ,
+-- qte DECIMAL (4,0)
+-- );
+
+-- INSERT INTO produit (codart, libart, stkale, stkphy, qteann, unimes)
+-- VALUES ('I120', 'tuyau', 5, 20, 200, 'unite');
+
+-- UPDATE produit 
+-- SET stkphy = 5
+-- WHERE codart = 'I120'
+
+-- UPDATE produit 
+-- SET stkphy = 4
+-- WHERE codart = 'I120'
+
+DELIMITER 
+|
+
+CREATE TRIGGER stk_update after insert ON produit
+
+FOR EACH ROW
+BEGIN
+		DECLARE stock_alerte INT; 
+		DECLARE stock_physique INT; 
+		DECLARE quantite_commandee INT;
+
+    -- Récupération des valeurs actuelles
+    set stock_alerte = (SELECT stkale FROM produit WHERE codart = 'I120');
+    set stock_physique = (SELECT stkphy FROM produit WHERE codart = 'I120');
+produit
+    -- Calcul de la quantité commandée
+    IF stock_physique < stock_alerte THEN
+    
+        -- Récupération de la quantité déjà commandée
+        set quantite_commandee = (SELECT COALESCE(SUM(qte), 0) FROM articles_a_commander WHERE codart = 'I120');
+
+        -- Calcul de la nouvelle quantité à commander
+        set quantite_commandee = stock_alerte - stock_physique - quantite_commandee;
+
+        -- Insertion dans la table ARTICLES_A_COMMANDER si la quantité à commander est positive
+        IF quantite_commandee > 0 THEN
+            INSERT INTO articles_a_commander (codart, qte) VALUES ('I120', quantite_commandee);
+        END IF;
+    END IF;
+END
+
+| 
+DELIMITER

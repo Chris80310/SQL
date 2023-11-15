@@ -1,0 +1,30 @@
+
+-- Les transactions permettent d'exécuter un traitement nécessitant plusieurs requêtes en une seule fois, 
+-- ou de l'annuler complètement si une des requêtes pose problème ou si la transaction est interrompue
+
+/** Gérer les transactions en MySql **/
+
+-- Sous PhpMyAdmin, après avoir sélectionné votre base Papyrus codez le script suivant et exécutez-le : 
+
+START TRANSACTION;
+SELECT nomfou FROM fournis WHERE numfou=120;
+UPDATE fournis  SET nomfou= 'GROSBRIGAND' WHERE numfou=120 
+SELECT nomfou FROM fournis WHERE numfou=120 
+
+-- 1/ Que concluez-vous ? 
+
+-- Ici, la commande update permet de modifier le nom du fournisseur dans la colone nomfou de la table fournis
+-- à partir de son id (120)
+
+-- 2/ Les données sont-elles modifiables par d'autres utilisateurs ?
+
+-- Non car j’ai donné tous les privilèges à l’utilisateur 1 qui lui, peut modifier, 
+-- annuler une transaction tandis que les util 2 et 3 ne peuvent que consulter
+
+-- 3/ Comment rendre la modification permanente ?
+
+-- En terminant par un « COMMIT ; »
+
+-- 4/ Comment annuler la transaction ? 
+
+-- En terminant par un « ROLLBACK ; »
