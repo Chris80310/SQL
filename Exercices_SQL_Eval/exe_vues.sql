@@ -8,8 +8,14 @@
 -- Egalement, il est possible d'attribuer à une vue (de la même manière qu'à une table d'ailleurs)
 -- des droits en lecture /écriture, etc... C'est une manière simple de cacher certaines colonnes à un ou à plusieurs utilisateurs.
 
+/**** Utilisation d'une vue *****/
 
--- Exercices sur hotel :
+-- Une vue s'utilise de la même façon qu'une table :
+
+SELECT * FROM nom_de_la_vue
+
+
+/******* Exercices sur hotel : *******/
 
 
 -- 1/ Afficher la liste des hôtels avec leur station

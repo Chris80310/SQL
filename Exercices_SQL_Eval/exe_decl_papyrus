@@ -43,34 +43,39 @@
 
 DELIMITER 
 |
-
-CREATE TRIGGER stk_update after insert ON produit
-
+CREATE TRIGGER stk_update after update ON produit
 FOR EACH ROW
 BEGIN
 		DECLARE stock_alerte INT; 
 		DECLARE stock_physique INT; 
 		DECLARE quantite_commandee INT;
+		DECLARE quantite_a_commander INT;
 
     -- Récupération des valeurs actuelles
-    set stock_alerte = (SELECT stkale FROM produit WHERE codart = 'I120');
-    set stock_physique = (SELECT stkphy FROM produit WHERE codart = 'I120');
-produit
+    set stock_physique = NEW.stkphy;
+	  set stock_alerte = NEW.stkale;
+
     -- Calcul de la quantité commandée
-    IF stock_physique < stock_alerte THEN
+    IF stock_physique < stock_alerte 
+	 
+	 THEN
     
         -- Récupération de la quantité déjà commandée
-        set quantite_commandee = (SELECT COALESCE(SUM(qte), 0) FROM articles_a_commander WHERE codart = 'I120');
-
-        -- Calcul de la nouvelle quantité à commander
-        set quantite_commandee = stock_alerte - stock_physique - quantite_commandee;
-
-        -- Insertion dans la table ARTICLES_A_COMMANDER si la quantité à commander est positive
-        IF quantite_commandee > 0 THEN
-            INSERT INTO articles_a_commander (codart, qte) VALUES ('I120', quantite_commandee);
-        END IF;
+        set quantite_commandee = (SELECT (SUM(art.qte)) FROM articles_a_commander AS art WHERE art.codart = NEW.codart);
+        
+        -- Calcul de la nouvelle quantité à commander et insertion dans la table ARTICLES_A_COMMANDER si la quantité à commander est nulle ou pas
+        
+		  IF quantite_commandee IS NOT null THEN
+        	set quantite_a_commander = (stock_alerte - stock_physique) - quantite_commandee;
+        	
+        ELSE 
+        	set quantite_a_commander = (stock_alerte - stock_physique);
+ 
+      END IF;
+      
+      INSERT INTO articles_a_commander (codart, qte) VALUES (NEW.codart, quantite_a_commander);
+       
     END IF;
 END
-
 | 
 DELIMITER
